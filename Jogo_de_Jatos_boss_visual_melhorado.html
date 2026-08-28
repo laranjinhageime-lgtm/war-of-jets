@@ -1,0 +1,3931 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Jatos</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #111;
+            font-family: Arial, sans-serif;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* =========================
+           MENUS
+        ========================= */
+
+        .menu {
+            position: fixed;
+            inset: 0;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            background:
+                linear-gradient(
+                    rgba(0, 20, 50, 0.72),
+                    rgba(0, 40, 80, 0.72)
+                );
+
+            color: white;
+
+            z-index: 100;
+
+            text-align: center;
+        }
+
+        .menu h1 {
+            font-size: clamp(48px, 8vw, 90px);
+            margin: 0 0 40px;
+
+            color: #ffffff;
+
+            text-shadow:
+                0 0 10px #48c8ff,
+                0 0 25px #0077ff,
+                3px 3px 8px black;
+        }
+
+        .menu h2 {
+            font-size: 40px;
+            margin-bottom: 25px;
+        }
+
+        .botoes-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: min(320px, 80vw);
+        }
+
+        .botao {
+            width: 100%;
+
+            padding: 17px 20px;
+
+            border: none;
+            border-radius: 14px;
+
+            background: linear-gradient(
+                180deg,
+                #209cff,
+                #006bd6
+            );
+
+            color: white;
+
+            font-size: 23px;
+            font-weight: bold;
+
+            cursor: pointer;
+
+            box-shadow:
+                0 6px 15px rgba(0,0,0,0.35);
+
+            transition: 0.15s;
+        }
+
+        .botao:hover {
+            transform: scale(1.04);
+
+            box-shadow:
+                0 0 20px rgba(50,180,255,0.65);
+        }
+
+        .botao.secundario {
+            background: rgba(255,255,255,0.14);
+        }
+
+        .opcao {
+            width: min(450px, 85vw);
+
+            background: rgba(255,255,255,0.1);
+
+            padding: 18px;
+
+            margin: 10px 0;
+
+            border-radius: 14px;
+        }
+
+        .opcao label {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .linha-opcao {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .toggle {
+            width: 58px;
+            height: 30px;
+
+            border-radius: 20px;
+
+            background: #555;
+
+            position: relative;
+
+            cursor: pointer;
+        }
+
+        .toggle::after {
+            content: "";
+
+            position: absolute;
+
+            width: 24px;
+            height: 24px;
+
+            top: 3px;
+            left: 3px;
+
+            background: white;
+
+            border-radius: 50%;
+
+            transition: 0.2s;
+        }
+
+        .toggle.ativo {
+            background: #168cff;
+        }
+
+        .toggle.ativo::after {
+            left: 31px;
+        }
+
+        /* =========================
+           HUD
+        ========================= */
+
+        #hud {
+            position: fixed;
+
+            top: 20px;
+            left: 20px;
+
+            z-index: 10;
+
+            padding: 12px 18px;
+
+            background: rgba(0, 0, 0, 0.45);
+
+            color: white;
+
+            border-radius: 12px;
+
+            font-size: 22px;
+
+            font-weight: bold;
+
+            user-select: none;
+        }
+
+        /* =========================
+           BOTÃO FULLSCREEN
+        ========================= */
+
+        #fullscreen {
+            position: fixed;
+
+            top: 20px;
+            right: 20px;
+
+            z-index: 20;
+
+            padding: 10px 15px;
+
+            border: none;
+            border-radius: 10px;
+
+            background: rgba(0,0,0,0.55);
+
+            color: white;
+
+            font-size: 20px;
+
+            cursor: pointer;
+        }
+
+        /* =========================
+           GAME OVER
+        ========================= */
+
+        #gameOver {
+            position: fixed;
+            inset: 0;
+
+            display: none;
+
+            justify-content: center;
+            align-items: center;
+
+            flex-direction: column;
+
+            background: rgba(0,0,0,0.72);
+
+            color: white;
+
+            z-index: 50;
+
+            text-align: center;
+        }
+
+        #gameOver h1 {
+            margin: 0;
+
+            font-size: clamp(
+                48px,
+                8vw,
+                90px
+            );
+
+            color: #ff4444;
+
+            text-shadow:
+                0 0 10px black,
+                0 0 25px black;
+        }
+
+        #pontuacaoFinal {
+            font-size: 30px;
+            margin: 20px 0;
+        }
+
+        #gameOver .botao {
+            width: min(320px, 80vw);
+        }
+
+        .aviso-boss {
+            position: fixed;
+            top: 78px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 12;
+            width: min(520px, 75vw);
+            padding: 9px 12px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.58);
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+            user-select: none;
+        }
+
+        .barra-boss-fundo {
+            height: 16px;
+            margin-top: 7px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.22);
+            border: 1px solid rgba(255,255,255,0.35);
+        }
+
+        .barra-boss-vida {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff2b2b, #ff7b28);
+            transition: width 0.08s linear;
+        }
+
+        .escondido {
+            display: none !important;
+        }
+
+        /* =========================
+           LOJA DE AERONAVES
+        ========================= */
+
+        #menuLoja {
+            overflow-y: auto;
+            padding: 35px 20px;
+        }
+
+        .saldo-loja {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 22px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.35);
+        }
+
+        .grade-aeronaves {
+            width: min(1050px, 94vw);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .card-aeronave {
+            background: rgba(255,255,255,0.12);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 18px;
+            padding: 18px;
+            backdrop-filter: blur(5px);
+            transition: 0.18s;
+        }
+
+        .card-aeronave:hover {
+            transform: translateY(-4px);
+            border-color: rgba(90,200,255,0.75);
+        }
+
+        .card-aeronave.selecionado {
+            border-color: #55e6ff;
+            box-shadow: 0 0 24px rgba(50,200,255,0.45);
+        }
+
+        .preview-aeronave {
+            width: 100%;
+            height: 135px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .card-aeronave h3 {
+            font-size: 24px;
+            margin: 5px 0 8px;
+        }
+
+        .atributos {
+            text-align: left;
+            line-height: 1.65;
+            font-size: 15px;
+            opacity: 0.95;
+            min-height: 78px;
+        }
+
+        .preco {
+            font-size: 19px;
+            font-weight: bold;
+            color: #ffe46b;
+            margin: 10px 0;
+        }
+
+        .botao-card {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 11px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background: #168cff;
+            color: white;
+        }
+
+        .botao-card:disabled {
+            cursor: default;
+            opacity: 0.65;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<canvas id="jogo"></canvas>
+
+<!-- =========================
+     HUD
+========================= -->
+
+<div id="hud">
+    ✈️ PONTOS: <span id="pontos">0</span><br>
+    🪙 MOEDAS: <span id="moedas">0</span><br>
+    🎯 FASE: <span id="fase">1</span><br>
+    🛩️ AERONAVE: <span id="aeronaveAtual">Falcão</span>
+</div>
+
+<button id="fullscreen">⛶</button>
+
+<div id="hudBoss" class="aviso-boss">
+    ☠️ BOSS — <span id="nomeBoss">TITÃ</span>
+    <div class="barra-boss-fundo">
+        <div id="barraBossVida" class="barra-boss-vida"></div>
+    </div>
+</div>
+
+
+<!-- =========================
+     MENU PRINCIPAL
+========================= -->
+
+<div id="menuPrincipal" class="menu">
+
+    <h1>✈️ JATOS</h1>
+
+    <div class="botoes-menu">
+
+        <button
+            class="botao"
+            id="botaoJogar"
+        >
+            ▶️ JOGAR
+        </button>
+
+        <button
+            class="botao secundario"
+            id="botaoLoja"
+        >
+            🛒 LOJA
+        </button>
+
+        <button
+            class="botao secundario"
+            id="botaoOpcoes"
+        >
+            ⚙️ OPÇÕES
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     LOJA
+========================= -->
+
+<div id="menuLoja" class="menu escondido">
+
+    <h2>🛒 HANGAR</h2>
+
+    <div class="saldo-loja">
+        🪙 Suas moedas: <span id="saldoLoja">0</span>
+    </div>
+
+    <div class="grade-aeronaves" id="gradeAeronaves"></div>
+
+    <div class="botoes-menu">
+        <button class="botao secundario" id="botaoVoltarLoja">
+            ← VOLTAR
+        </button>
+    </div>
+
+</div>
+
+
+<!-- =========================
+     MENU OPÇÕES
+========================= -->
+
+<div
+    id="menuOpcoes"
+    class="menu escondido"
+>
+
+    <h2>⚙️ OPÇÕES</h2>
+
+    <div class="opcao">
+
+        <label>
+            🔊 Volume:
+            <strong id="valorVolume">
+                70%
+            </strong>
+        </label>
+
+        <input
+            type="range"
+            id="volume"
+            min="0"
+            max="100"
+            value="70"
+        >
+
+    </div>
+
+
+    <div class="opcao">
+
+        <div class="linha-opcao">
+
+            <span>
+                🎵 Música
+            </span>
+
+            <div
+                id="toggleMusica"
+                class="toggle ativo"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <div class="opcao">
+
+        <div class="linha-opcao">
+
+            <span>
+                🔫 Efeitos sonoros
+            </span>
+
+            <div
+                id="toggleEfeitos"
+                class="toggle ativo"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <div class="botoes-menu">
+
+        <button
+            class="botao secundario"
+            id="botaoVoltar"
+        >
+            ← VOLTAR
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     FASE CONCLUÍDA
+========================= -->
+
+<div id="faseCompleta" class="menu escondido">
+
+    <h2>🏆 FASE CONCLUÍDA!</h2>
+
+    <div class="opcao">
+        <p id="resumoFase" style="font-size:22px; margin:0;">
+            Você completou a fase!
+        </p>
+    </div>
+
+    <div class="botoes-menu">
+        <button class="botao" id="proximaFase">
+            ▶️ PRÓXIMA FASE
+        </button>
+    </div>
+
+</div>
+
+
+<!-- =========================
+     GAME OVER
+========================= -->
+
+<div id="gameOver">
+
+    <h1>GAME OVER</h1>
+
+    <div id="pontuacaoFinal">
+        Pontuação: 0
+    </div>
+
+    <button
+        class="botao"
+        id="reiniciar"
+    >
+        🔄 JOGAR NOVAMENTE
+    </button>
+
+    <button
+        class="botao secundario"
+        id="voltarMenu"
+        style="margin-top:12px; width:min(320px,80vw);"
+    >
+        🏠 MENU PRINCIPAL
+    </button>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas =
+    document.getElementById("jogo");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+/* =========================================================
+   ELEMENTOS
+========================================================= */
+
+const menuPrincipal =
+    document.getElementById(
+        "menuPrincipal"
+    );
+
+const menuOpcoes =
+    document.getElementById(
+        "menuOpcoes"
+    );
+
+const gameOver =
+    document.getElementById(
+        "gameOver"
+    );
+
+const pontosTexto =
+    document.getElementById(
+        "pontos"
+    );
+
+const moedasTexto =
+    document.getElementById(
+        "moedas"
+    );
+
+const faseTexto =
+    document.getElementById(
+        "fase"
+    );
+
+const aeronaveAtualTexto =
+    document.getElementById(
+        "aeronaveAtual"
+    );
+
+const menuLoja =
+    document.getElementById(
+        "menuLoja"
+    );
+
+const gradeAeronaves =
+    document.getElementById(
+        "gradeAeronaves"
+    );
+
+const saldoLoja =
+    document.getElementById(
+        "saldoLoja"
+    );
+
+const botaoLoja =
+    document.getElementById(
+        "botaoLoja"
+    );
+
+const botaoVoltarLoja =
+    document.getElementById(
+        "botaoVoltarLoja"
+    );
+
+const faseCompleta =
+    document.getElementById(
+        "faseCompleta"
+    );
+
+const resumoFase =
+    document.getElementById(
+        "resumoFase"
+    );
+
+const proximaFase =
+    document.getElementById(
+        "proximaFase"
+    );
+
+const pontuacaoFinal =
+    document.getElementById(
+        "pontuacaoFinal"
+    );
+
+const botaoJogar =
+    document.getElementById(
+        "botaoJogar"
+    );
+
+const botaoOpcoes =
+    document.getElementById(
+        "botaoOpcoes"
+    );
+
+const botaoVoltar =
+    document.getElementById(
+        "botaoVoltar"
+    );
+
+const botaoReiniciar =
+    document.getElementById(
+        "reiniciar"
+    );
+
+const voltarMenu =
+    document.getElementById(
+        "voltarMenu"
+    );
+
+const botaoFullscreen =
+    document.getElementById(
+        "fullscreen"
+    );
+
+const hudBoss =
+    document.getElementById(
+        "hudBoss"
+    );
+
+const barraBossVida =
+    document.getElementById(
+        "barraBossVida"
+    );
+
+const nomeBoss =
+    document.getElementById(
+        "nomeBoss"
+    );
+
+const volumeSlider =
+    document.getElementById(
+        "volume"
+    );
+
+const valorVolume =
+    document.getElementById(
+        "valorVolume"
+    );
+
+const toggleMusica =
+    document.getElementById(
+        "toggleMusica"
+    );
+
+const toggleEfeitos =
+    document.getElementById(
+        "toggleEfeitos"
+    );
+
+
+/* =========================================================
+   ÁUDIO
+========================================================= */
+
+let audioContext = null;
+
+let volumeGeral = 0.7;
+
+let musicaLigada = true;
+
+let efeitosLigados = true;
+
+let intervaloMusica = null;
+
+let osciladoresMusica = [];
+
+let musicaInicializada = false;
+
+
+/* Criar AudioContext */
+
+function iniciarAudio() {
+
+    if (!audioContext) {
+
+        audioContext =
+            new (
+                window.AudioContext ||
+                window.webkitAudioContext
+            )();
+    }
+
+    if (
+        audioContext.state ===
+        "suspended"
+    ) {
+
+        audioContext.resume();
+    }
+}
+
+
+/* Som simples */
+
+function tocarSom(
+    frequencia,
+    duracao,
+    tipo = "sine",
+    volume = 0.15
+) {
+
+    if (!efeitosLigados) {
+        return;
+    }
+
+    iniciarAudio();
+
+    const agora =
+        audioContext.currentTime;
+
+    const oscilador =
+        audioContext.createOscillator();
+
+    const ganho =
+        audioContext.createGain();
+
+    oscilador.type = tipo;
+
+    oscilador.frequency.value =
+        frequencia;
+
+    ganho.gain.setValueAtTime(
+        volume * volumeGeral,
+        agora
+    );
+
+    ganho.gain.exponentialRampToValueAtTime(
+        0.001,
+        agora + duracao
+    );
+
+    oscilador.connect(ganho);
+
+    ganho.connect(
+        audioContext.destination
+    );
+
+    oscilador.start(agora);
+
+    oscilador.stop(
+        agora + duracao
+    );
+}
+
+
+/* Laser */
+
+function somLaser() {
+
+    tocarSom(
+        700,
+        0.09,
+        "sawtooth",
+        0.12
+    );
+
+    setTimeout(() => {
+
+        tocarSom(
+            350,
+            0.08,
+            "square",
+            0.08
+        );
+
+    }, 25);
+}
+
+
+/* Explosão */
+
+function somExplosao() {
+
+    if (!efeitosLigados) {
+        return;
+    }
+
+    tocarSom(
+        110,
+        0.35,
+        "sawtooth",
+        0.3
+    );
+
+    setTimeout(() => {
+
+        tocarSom(
+            60,
+            0.3,
+            "square",
+            0.2
+        );
+
+    }, 70);
+}
+
+
+/* Clique */
+
+function somClique() {
+
+    tocarSom(
+        500,
+        0.06,
+        "sine",
+        0.08
+    );
+}
+
+
+/* Música ambiente */
+function iniciarMusica() {
+
+    if (
+        !musicaLigada ||
+        musicaInicializada
+    ) {
+        return;
+    }
+
+    iniciarAudio();
+
+    musicaInicializada = true;
+
+    const notas = [
+        261.63,
+        329.63,
+        392.00,
+        329.63,
+        293.66,
+        349.23,
+        440.00,
+        349.23
+    ];
+
+    let indice = 0;
+
+    intervaloMusica =
+        setInterval(() => {
+
+            if (
+                !musicaLigada
+            ) {
+                return;
+            }
+
+            const agora =
+                audioContext.currentTime;
+
+            const oscilador =
+                audioContext.createOscillator();
+
+            const ganho =
+                audioContext.createGain();
+
+            oscilador.type =
+                "triangle";
+
+            oscilador.frequency.value =
+                notas[indice];
+
+            ganho.gain.setValueAtTime(
+                0.035 * volumeGeral,
+                agora
+            );
+
+            ganho.gain.exponentialRampToValueAtTime(
+                0.001,
+                agora + 0.7
+            );
+
+            oscilador.connect(ganho);
+
+            ganho.connect(
+                audioContext.destination
+            );
+
+            oscilador.start(
+                agora
+            );
+
+            oscilador.stop(
+                agora + 0.7
+            );
+
+            indice =
+                (indice + 1) %
+                notas.length;
+
+        }, 750);
+}
+
+
+/* Desligar música */
+
+function pararMusica() {
+
+    musicaInicializada =
+        false;
+
+    if (
+        intervaloMusica
+    ) {
+
+        clearInterval(
+            intervaloMusica
+        );
+
+        intervaloMusica = null;
+    }
+}
+
+
+/* =========================================================
+   VARIÁVEIS DO JOGO
+========================================================= */
+
+let jogador = null;
+
+let inimigos = [];
+
+let lasersJogador = [];
+
+let lasersInimigos = [];
+
+let nuvens = [];
+
+let pontos = 0;
+
+let moedas =
+    Number(localStorage.getItem("moedasJatos")) || 0;
+
+let fase = 1;
+
+let inimigosDerrotadosNaFase = 0;
+
+let metaDaFase = 10;
+
+let moedasGanhasNaFase = 0;
+
+/* Aeronaves disponíveis */
+const aeronaves = {
+    falcao: {
+        nome: "Falcão",
+        preco: 0,
+        velocidade: 10.5,
+        cadencia: 220,
+        laserVelocidade: 13,
+        cor1: "#d6e6ef",
+        cor2: "#263746",
+        cabine: "#39c9ff",
+        tipo: "caca"
+    },
+
+    raptor: {
+        nome: "Raptor X",
+        preco: 150,
+        velocidade: 12,
+        cadencia: 175,
+        laserVelocidade: 15,
+        cor1: "#f2f2f2",
+        cor2: "#4b4b55",
+        cabine: "#7ef9ff",
+        tipo: "stealth"
+    },
+
+    tempestade: {
+        nome: "Tempestade",
+        preco: 320,
+        velocidade: 11.3,
+        cadencia: 135,
+        laserVelocidade: 17,
+        cor1: "#4d63ff",
+        cor2: "#111a4f",
+        cabine: "#93f7ff",
+        tipo: "duplo"
+    },
+
+    apache: {
+        nome: "Águia Rotor",
+        preco: 500,
+        velocidade: 9.5,
+        cadencia: 105,
+        laserVelocidade: 14,
+        cor1: "#4d5b45",
+        cor2: "#1d2619",
+        cabine: "#8bd8e8",
+        tipo: "helicoptero"
+    }
+};
+
+let aeronavesCompradas =
+    JSON.parse(localStorage.getItem("aeronavesJatos") || '["falcao"]');
+
+if (!aeronavesCompradas.includes("falcao")) {
+    aeronavesCompradas.push("falcao");
+}
+
+let aeronaveSelecionada =
+    localStorage.getItem("aeronaveSelecionada") || "falcao";
+
+if (!aeronaves[aeronaveSelecionada] ||
+    !aeronavesCompradas.includes(aeronaveSelecionada)) {
+    aeronaveSelecionada = "falcao";
+}
+
+let velocidadeInimigos = 3;
+
+let boss = null;
+
+let bossAtivo = false;
+
+let bossAparecendo = false;
+
+let jogoAtivo = false;
+
+let teclas = {};
+
+let ultimoTiro = 0;
+
+let intervaloTiro = aeronaves[aeronaveSelecionada].cadencia;
+
+
+/* =========================================================
+   REDIMENSIONAR
+========================================================= */
+
+function redimensionar() {
+
+    canvas.width =
+        window.innerWidth;
+
+    canvas.height =
+        window.innerHeight;
+
+    if (!jogador) {
+        return;
+    }
+
+    jogador.x = Math.max(
+        0,
+        Math.min(
+            jogador.x,
+            canvas.width -
+            jogador.largura
+        )
+    );
+
+    jogador.y = Math.max(
+        0,
+        Math.min(
+            jogador.y,
+            canvas.height -
+            jogador.altura
+        )
+    );
+}
+
+window.addEventListener(
+    "resize",
+    redimensionar
+);
+
+
+/* =========================================================
+   LOJA E AERONAVES
+========================================================= */
+
+function salvarAeronaves() {
+
+    localStorage.setItem(
+        "aeronavesJatos",
+        JSON.stringify(aeronavesCompradas)
+    );
+
+    localStorage.setItem(
+        "aeronaveSelecionada",
+        aeronaveSelecionada
+    );
+}
+
+
+function desenharPreview(canvasPreview, chave) {
+
+    const pctx = canvasPreview.getContext("2d");
+    const modelo = aeronaves[chave];
+
+    canvasPreview.width = 220;
+    canvasPreview.height = 135;
+
+    const grad = pctx.createLinearGradient(0, 0, 0, 135);
+    grad.addColorStop(0, "#1987e8");
+    grad.addColorStop(1, "#a7e3ff");
+
+    pctx.fillStyle = grad;
+    pctx.fillRect(0, 0, 220, 135);
+
+    pctx.save();
+    pctx.translate(110, 68);
+    pctx.scale(1.35, 1.35);
+
+    desenharModeloAeronave(pctx, modelo, 0, false);
+
+    pctx.restore();
+}
+
+
+function montarLoja() {
+
+    saldoLoja.textContent = moedas;
+
+    gradeAeronaves.innerHTML = "";
+
+    for (const [chave, modelo] of Object.entries(aeronaves)) {
+
+        const comprado =
+            aeronavesCompradas.includes(chave);
+
+        const selecionado =
+            aeronaveSelecionada === chave;
+
+        const card =
+            document.createElement("div");
+
+        card.className =
+            "card-aeronave" +
+            (selecionado ? " selecionado" : "");
+
+        const preview =
+            document.createElement("canvas");
+
+        preview.className =
+            "preview-aeronave";
+
+        const titulo =
+            document.createElement("h3");
+
+        titulo.textContent =
+            modelo.nome;
+
+        const atributos =
+            document.createElement("div");
+
+        atributos.className =
+            "atributos";
+
+        atributos.innerHTML =
+            "⚡ Velocidade: " +
+            modelo.velocidade.toFixed(1) +
+            "<br>🔥 Cadência: " +
+            Math.round(1000 / modelo.cadencia) +
+            " tiros/s" +
+            "<br>💠 Laser: " +
+            modelo.laserVelocidade;
+
+        const preco =
+            document.createElement("div");
+
+        preco.className =
+            "preco";
+
+        preco.textContent =
+            modelo.preco === 0
+                ? "GRÁTIS"
+                : "🪙 " + modelo.preco;
+
+        const botao =
+            document.createElement("button");
+
+        botao.className =
+            "botao-card";
+
+        if (selecionado) {
+            botao.textContent = "✓ EQUIPADO";
+            botao.disabled = true;
+        } else if (comprado) {
+            botao.textContent = "EQUIPAR";
+        } else {
+            botao.textContent = "COMPRAR";
+        }
+
+        botao.addEventListener(
+            "click",
+            function() {
+
+                if (!comprado) {
+
+                    if (moedas < modelo.preco) {
+
+                        tocarSom(
+                            120,
+                            0.15,
+                            "square",
+                            0.12
+                        );
+
+                        alert("Você ainda não tem moedas suficientes.");
+
+                        return;
+                    }
+
+                    moedas -= modelo.preco;
+
+                    aeronavesCompradas.push(
+                        chave
+                    );
+
+                    salvarMoedas();
+
+                    salvarAeronaves();
+                }
+
+                aeronaveSelecionada =
+                    chave;
+
+                salvarAeronaves();
+
+                aplicarAeronaveSelecionada();
+
+                montarLoja();
+
+                somClique();
+            }
+        );
+
+        card.append(
+            preview,
+            titulo,
+            atributos,
+            preco,
+            botao
+        );
+
+        gradeAeronaves.appendChild(
+            card
+        );
+
+        desenharPreview(
+            preview,
+            chave
+        );
+    }
+}
+
+
+function aplicarAeronaveSelecionada() {
+
+    const modelo =
+        aeronaves[aeronaveSelecionada];
+
+    intervaloTiro =
+        modelo.cadencia;
+
+    if (jogador) {
+        jogador.velocidade =
+            modelo.velocidade;
+    }
+
+    aeronaveAtualTexto.textContent =
+        modelo.nome;
+
+    atualizarHUD();
+}
+
+
+/* =========================================================
+   PROGRESSÃO: MOEDAS E FASES
+========================================================= */
+
+function atualizarHUD() {
+
+    pontosTexto.textContent =
+        pontos;
+
+    moedasTexto.textContent =
+        moedas;
+
+    faseTexto.textContent =
+        fase;
+
+    aeronaveAtualTexto.textContent =
+        aeronaves[aeronaveSelecionada].nome;
+
+    if (saldoLoja) {
+        saldoLoja.textContent =
+            moedas;
+    }
+}
+
+
+function salvarMoedas() {
+
+    localStorage.setItem(
+        "moedasJatos",
+        moedas
+    );
+}
+
+
+function recompensaPorInimigo() {
+
+    const recompensa =
+        5 + (fase - 1) * 2;
+
+    moedas += recompensa;
+
+    moedasGanhasNaFase +=
+        recompensa;
+
+    inimigosDerrotadosNaFase++;
+
+    salvarMoedas();
+
+    atualizarHUD();
+
+    if (
+        inimigosDerrotadosNaFase >=
+        metaDaFase &&
+        !bossAtivo &&
+        !bossAparecendo
+    ) {
+
+        iniciarBoss();
+    }
+}
+
+
+
+function iniciarBoss() {
+
+    if (!jogoAtivo || bossAtivo || bossAparecendo) {
+        return;
+    }
+
+    bossAparecendo = true;
+
+    /* Limpa os inimigos menores para o duelo final */
+    inimigos = [];
+    lasersInimigos = [];
+
+    const vidaMaxima =
+        32 + fase * 18;
+
+    boss = {
+        x: canvas.width / 2 - 80,
+        y: -190,
+        largura: 160,
+        altura: 125,
+        vida: vidaMaxima,
+        vidaMaxima: vidaMaxima,
+        velocidadeX: 2.2 + fase * 0.18,
+        alvoY: 85,
+        direcao: 1,
+        ultimoTiro: performance.now(),
+        intervaloTiro: Math.max(520, 1050 - fase * 55),
+        nome: fase % 3 === 0 ? "CARRASCO" : fase % 2 === 0 ? "TITÃ VERMELHO" : "TITÃ"
+    };
+
+    nomeBoss.textContent =
+        boss.nome;
+
+    hudBoss.style.display =
+        "block";
+
+    atualizarBarraBoss();
+
+    tocarSom(
+        85,
+        0.6,
+        "sawtooth",
+        0.22
+    );
+}
+
+
+function atualizarBarraBoss() {
+
+    if (!boss) {
+        barraBossVida.style.width =
+            "0%";
+        return;
+    }
+
+    const porcentagem =
+        Math.max(
+            0,
+            (boss.vida / boss.vidaMaxima) * 100
+        );
+
+    barraBossVida.style.width =
+        porcentagem + "%";
+}
+
+
+function atirarBoss(tempo) {
+
+    if (
+        !bossAtivo ||
+        !boss ||
+        tempo - boss.ultimoTiro <
+        boss.intervaloTiro
+    ) {
+        return;
+    }
+
+    boss.ultimoTiro = tempo;
+
+    const centroX =
+        boss.x + boss.largura / 2;
+
+    const baseY =
+        boss.y + boss.altura - 8;
+
+    /* Rajada tripla */
+    [-38, 0, 38].forEach(
+        deslocamento => {
+
+            lasersInimigos.push({
+                x: centroX + deslocamento - 4,
+                y: baseY,
+                largura: 8,
+                altura: 28,
+                velocidade: 7.5 + fase * 0.35
+            });
+        }
+    );
+
+    tocarSom(
+        190,
+        0.1,
+        "square",
+        0.07
+    );
+}
+
+
+function atualizarBoss(tempo) {
+
+    if (!boss) {
+        return;
+    }
+
+    /* Entrada dramática */
+    if (bossAparecendo) {
+
+        boss.y += 2.8;
+
+        if (boss.y >= boss.alvoY) {
+
+            boss.y = boss.alvoY;
+
+            bossAparecendo = false;
+
+            bossAtivo = true;
+        }
+
+        return;
+    }
+
+    if (!bossAtivo) {
+        return;
+    }
+
+    /* O boss fica concentrado na região central */
+    const limiteEsquerdo =
+        canvas.width * 0.20;
+
+    const limiteDireito =
+        canvas.width * 0.80 -
+        boss.largura;
+
+    boss.x +=
+        boss.velocidadeX *
+        boss.direcao;
+
+    if (boss.x <= limiteEsquerdo) {
+        boss.x = limiteEsquerdo;
+        boss.direcao = 1;
+    }
+
+    if (boss.x >= limiteDireito) {
+        boss.x = limiteDireito;
+        boss.direcao = -1;
+    }
+
+    atirarBoss(tempo);
+}
+
+
+function bossDerrotado() {
+
+    if (!boss) {
+        return;
+    }
+
+    const bonus =
+        40 + fase * 20;
+
+    moedas += bonus;
+
+    moedasGanhasNaFase += bonus;
+
+    pontos +=
+        10 + fase * 2;
+
+    salvarMoedas();
+
+    atualizarHUD();
+
+    somExplosao();
+
+    bossAtivo = false;
+
+    bossAparecendo = false;
+
+    boss = null;
+
+    hudBoss.style.display =
+        "none";
+
+    concluirFase();
+}
+
+
+function concluirFase() {
+
+    if (!jogoAtivo) {
+        return;
+    }
+
+    jogoAtivo = false;
+
+    lasersJogador = [];
+    lasersInimigos = [];
+
+    resumoFase.innerHTML =
+        "Fase " + fase +
+        " concluída!<br><br>" +
+        "🪙 Moedas ganhas: " +
+        moedasGanhasNaFase +
+        "<br>" +
+        "🎯 Inimigos derrotados: " +
+        inimigosDerrotadosNaFase;
+
+    faseCompleta.classList.remove(
+        "escondido"
+    );
+}
+
+
+function iniciarProximaFase() {
+
+    fase++;
+
+    inimigosDerrotadosNaFase = 0;
+
+    moedasGanhasNaFase = 0;
+
+    metaDaFase =
+        10 + (fase - 1) * 5;
+
+    velocidadeInimigos =
+        3 + (fase - 1) * 0.55;
+
+    inimigos = [];
+
+    lasersJogador = [];
+
+    lasersInimigos = [];
+
+    jogador.x =
+        canvas.width / 2 -
+        jogador.largura / 2;
+
+    jogador.y =
+        canvas.height - 150;
+
+    faseCompleta.classList.add(
+        "escondido"
+    );
+
+    boss = null;
+    bossAtivo = false;
+    bossAparecendo = false;
+    hudBoss.style.display = "none";
+
+    jogoAtivo = true;
+
+    atualizarHUD();
+}
+
+
+/* =========================================================
+   INICIAR JOGO
+========================================================= */
+
+function iniciarJogo() {
+
+    redimensionar();
+
+    jogador = {
+
+        x:
+            canvas.width / 2 - 28,
+
+        y:
+            canvas.height - 150,
+
+        largura: 56,
+
+        altura: 76,
+
+        velocidade:
+            aeronaves[aeronaveSelecionada].velocidade
+    };
+
+    inimigos = [];
+
+    lasersJogador = [];
+
+    lasersInimigos = [];
+
+    nuvens = [];
+
+    boss = null;
+    bossAtivo = false;
+    bossAparecendo = false;
+    hudBoss.style.display = "none";
+
+    pontos = 0;
+
+    fase = 1;
+
+    inimigosDerrotadosNaFase = 0;
+
+    metaDaFase = 10;
+
+    moedasGanhasNaFase = 0;
+
+    velocidadeInimigos = 3;
+
+    jogoAtivo = true;
+
+    ultimoTiro = 0;
+
+    intervaloTiro =
+        aeronaves[aeronaveSelecionada].cadencia;
+
+    atualizarHUD();
+
+    gameOver.style.display =
+        "none";
+
+    menuPrincipal.classList.add(
+        "escondido"
+    );
+
+    menuOpcoes.classList.add(
+        "escondido"
+    );
+
+    menuLoja.classList.add(
+        "escondido"
+    );
+
+    faseCompleta.classList.add(
+        "escondido"
+    );
+
+    /* Nuvens */
+
+    for (
+        let i = 0;
+        i < 12;
+        i++
+    ) {
+
+        nuvens.push({
+
+            x:
+                Math.random() *
+                canvas.width,
+
+            y:
+                Math.random() *
+                canvas.height,
+
+            tamanho:
+                40 +
+                Math.random() * 60,
+
+            velocidade:
+                0.4 +
+                Math.random() * 0.8
+        });
+    }
+
+    iniciarAudio();
+
+    iniciarMusica();
+}
+
+
+/* =========================================================
+   TECLADO
+========================================================= */
+
+document.addEventListener(
+    "keydown",
+    function(e) {
+
+        teclas[e.key.toLowerCase()] =
+            true;
+
+        /* Espaço */
+
+        if (
+            e.code === "Space"
+        ) {
+
+            teclas.space = true;
+
+            e.preventDefault();
+        }
+
+        /* Setas */
+
+        if (
+            [
+                "ArrowUp",
+                "ArrowDown",
+                "ArrowLeft",
+                "ArrowRight"
+            ].includes(e.key)
+        ) {
+
+            e.preventDefault();
+        }
+    }
+);
+
+
+document.addEventListener(
+    "keyup",
+    function(e) {
+
+        teclas[e.key.toLowerCase()] =
+            false;
+
+        if (
+            e.code === "Space"
+        ) {
+
+            teclas.space =
+                false;
+        }
+    }
+);
+
+
+/* =========================================================
+   CRIAR INIMIGO
+========================================================= */
+
+function criarInimigo() {
+
+    if (
+        !jogoAtivo ||
+        bossAtivo ||
+        bossAparecendo ||
+        inimigosDerrotadosNaFase >= metaDaFase
+    ) {
+        return;
+    }
+
+    const faixaEsquerda =
+        canvas.width * 0.24;
+
+    const faixaDireita =
+        canvas.width * 0.76;
+
+    const larguraFaixa =
+        Math.max(
+            80,
+            faixaDireita - faixaEsquerda - 56
+        );
+
+    inimigos.push({
+
+        x:
+            faixaEsquerda +
+            Math.random() *
+            larguraFaixa,
+
+        y: -100,
+
+        largura: 62,
+
+        altura: 82,
+
+        velocidade:
+            velocidadeInimigos,
+
+        ultimoTiro:
+            performance.now() +
+            Math.random() * 1500,
+
+        rotacao:
+            (Math.random() - 0.5) *
+            0.10,
+
+        modelo:
+            Math.floor(
+                Math.random() * 3
+            )
+    });
+}
+
+setInterval(
+    criarInimigo,
+    900
+);
+
+
+/* =========================================================
+   SOL
+========================================================= */
+
+function desenharSol() {
+
+    const x =
+        canvas.width - 120;
+
+    const y = 100;
+
+    const gradiente =
+        ctx.createRadialGradient(
+            x,
+            y,
+            10,
+            x,
+            y,
+            80
+        );
+
+    gradiente.addColorStop(
+        0,
+        "#fffde0"
+    );
+
+    gradiente.addColorStop(
+        0.5,
+        "#ffe879"
+    );
+
+    gradiente.addColorStop(
+        1,
+        "rgba(255,232,121,0)"
+    );
+
+    ctx.fillStyle =
+        gradiente;
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        80,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+}
+
+
+/* =========================================================
+   NUVEM
+========================================================= */
+
+function desenharNuvem(nuvem) {
+
+    ctx.fillStyle =
+        "rgba(255,255,255,0.8)";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        nuvem.x,
+        nuvem.y,
+        nuvem.tamanho * 0.45,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.arc(
+        nuvem.x +
+        nuvem.tamanho * 0.4,
+
+        nuvem.y - 15,
+
+        nuvem.tamanho * 0.55,
+
+        0,
+        Math.PI * 2
+    );
+
+    ctx.arc(
+        nuvem.x +
+        nuvem.tamanho * 0.9,
+
+        nuvem.y,
+
+        nuvem.tamanho * 0.4,
+
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+}
+
+
+/* =========================================================
+   MONTANHAS
+========================================================= */
+
+function desenharMontanhas() {
+
+    ctx.fillStyle =
+        "#87aebd";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        0,
+        canvas.height
+    );
+
+    ctx.lineTo(
+        canvas.width * 0.15,
+        canvas.height * 0.73
+    );
+
+    ctx.lineTo(
+        canvas.width * 0.25,
+        canvas.height * 0.85
+    );
+
+    ctx.lineTo(
+        canvas.width * 0.38,
+        canvas.height * 0.64
+    );
+
+    ctx.lineTo(
+        canvas.width * 0.52,
+        canvas.height * 0.83
+    );
+
+    ctx.lineTo(
+        canvas.width * 0.68,
+        canvas.height * 0.69
+    );
+
+    ctx.lineTo(
+        canvas.width * 0.82,
+        canvas.height * 0.82
+    );
+
+    ctx.lineTo(
+        canvas.width,
+        canvas.height * 0.68
+    );
+
+    ctx.lineTo(
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.fillStyle =
+        "#416d50";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        0,
+        canvas.height
+    );
+
+    ctx.lineTo(
+        canvas.width * 0.2,
+        canvas.height * 0.82
+    );
+
+    ctx.lineTo(
+        canvas.width * 0.34,
+        canvas.height * 0.92
+    );
+
+    ctx.lineTo(
+        canvas.width * 0.48,
+        canvas.height * 0.72
+    );
+
+    ctx.lineTo(
+        canvas.width * 0.64,
+        canvas.height * 0.9
+    );
+
+    ctx.lineTo(
+        canvas.width * 0.8,
+        canvas.height * 0.76
+    );
+
+    ctx.lineTo(
+        canvas.width,
+        canvas.height * 0.88
+    );
+
+    ctx.lineTo(
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+}
+
+
+/* =========================================================
+   MODELOS DE AERONAVE
+========================================================= */
+
+function desenharModeloAeronave(alvo, modelo, tempo = 0, comMotor = true) {
+
+    const tipo = modelo.tipo;
+
+    alvo.save();
+
+    if (tipo === "helicoptero") {
+
+        /* Rotor */
+        alvo.save();
+        alvo.rotate(tempo * 0.012);
+
+        alvo.strokeStyle = "rgba(30,30,30,0.72)";
+        alvo.lineWidth = 4;
+
+        alvo.beginPath();
+        alvo.moveTo(-38, 0);
+        alvo.lineTo(38, 0);
+        alvo.moveTo(0, -38);
+        alvo.lineTo(0, 38);
+        alvo.stroke();
+
+        alvo.restore();
+
+        /* Cauda */
+        alvo.fillStyle = modelo.cor2;
+        alvo.fillRect(-5, 18, 10, 35);
+
+        alvo.beginPath();
+        alvo.moveTo(-5, 45);
+        alvo.lineTo(-18, 58);
+        alvo.lineTo(5, 52);
+        alvo.closePath();
+        alvo.fill();
+
+        /* Corpo */
+        const hg = alvo.createLinearGradient(-20,0,20,0);
+        hg.addColorStop(0, modelo.cor2);
+        hg.addColorStop(0.5, modelo.cor1);
+        hg.addColorStop(1, modelo.cor2);
+
+        alvo.fillStyle = hg;
+        alvo.beginPath();
+        alvo.ellipse(0, 4, 18, 30, 0, 0, Math.PI * 2);
+        alvo.fill();
+
+        /* Aletas */
+        alvo.beginPath();
+        alvo.moveTo(-14, 6);
+        alvo.lineTo(-31, 20);
+        alvo.lineTo(-12, 16);
+        alvo.closePath();
+        alvo.fill();
+
+        alvo.beginPath();
+        alvo.moveTo(14, 6);
+        alvo.lineTo(31, 20);
+        alvo.lineTo(12, 16);
+        alvo.closePath();
+        alvo.fill();
+
+        /* Vidro */
+        alvo.fillStyle = modelo.cabine;
+        alvo.beginPath();
+        alvo.ellipse(0, -12, 10, 14, 0, 0, Math.PI * 2);
+        alvo.fill();
+
+        alvo.fillStyle = "rgba(255,255,255,0.65)";
+        alvo.beginPath();
+        alvo.ellipse(-4, -17, 2.5, 6, 0, 0, Math.PI * 2);
+        alvo.fill();
+
+        /* Rotor traseiro */
+        alvo.strokeStyle = "#bbb";
+        alvo.lineWidth = 2;
+        alvo.beginPath();
+        alvo.moveTo(-10, 52);
+        alvo.lineTo(10, 52);
+        alvo.moveTo(0, 42);
+        alvo.lineTo(0, 62);
+        alvo.stroke();
+
+        alvo.restore();
+        return;
+    }
+
+    /* Chama do motor */
+    if (comMotor) {
+
+        alvo.shadowColor = "#ff7b00";
+        alvo.shadowBlur = 18;
+
+        alvo.fillStyle = "#ff4d00";
+
+        alvo.beginPath();
+
+        if (tipo === "duplo") {
+            alvo.moveTo(-15, 25);
+            alvo.lineTo(-10, 60);
+            alvo.lineTo(-4, 25);
+
+            alvo.moveTo(4, 25);
+            alvo.lineTo(10, 60);
+            alvo.lineTo(15, 25);
+        } else {
+            alvo.moveTo(-9, 28);
+            alvo.lineTo(0, 62);
+            alvo.lineTo(9, 28);
+        }
+
+        alvo.fill();
+
+        alvo.shadowBlur = 0;
+
+        alvo.fillStyle = "#ffe600";
+        alvo.beginPath();
+
+        if (tipo === "duplo") {
+            alvo.moveTo(-12, 27);
+            alvo.lineTo(-10, 48);
+            alvo.lineTo(-7, 27);
+
+            alvo.moveTo(7, 27);
+            alvo.lineTo(10, 48);
+            alvo.lineTo(12, 27);
+        } else {
+            alvo.moveTo(-4, 28);
+            alvo.lineTo(0, 48);
+            alvo.lineTo(4, 28);
+        }
+
+        alvo.fill();
+    }
+
+    /* Corpo e asas */
+    const gradiente =
+        alvo.createLinearGradient(
+            -35,
+            0,
+            35,
+            0
+        );
+
+    gradiente.addColorStop(
+        0,
+        modelo.cor2
+    );
+
+    gradiente.addColorStop(
+        0.48,
+        modelo.cor1
+    );
+
+    gradiente.addColorStop(
+        1,
+        modelo.cor2
+    );
+
+    alvo.fillStyle =
+        gradiente;
+
+    alvo.beginPath();
+
+    if (tipo === "stealth") {
+
+        alvo.moveTo(0, -40);
+        alvo.lineTo(10, -8);
+        alvo.lineTo(38, 10);
+        alvo.lineTo(20, 18);
+        alvo.lineTo(34, 31);
+        alvo.lineTo(8, 23);
+        alvo.lineTo(0, 12);
+        alvo.lineTo(-8, 23);
+        alvo.lineTo(-34, 31);
+        alvo.lineTo(-20, 18);
+        alvo.lineTo(-38, 10);
+        alvo.lineTo(-10, -8);
+
+    } else if (tipo === "duplo") {
+
+        alvo.moveTo(0, -40);
+        alvo.lineTo(9, -10);
+        alvo.lineTo(38, 18);
+        alvo.lineTo(16, 17);
+        alvo.lineTo(22, 31);
+        alvo.lineTo(7, 26);
+        alvo.lineTo(0, 10);
+        alvo.lineTo(-7, 26);
+        alvo.lineTo(-22, 31);
+        alvo.lineTo(-16, 17);
+        alvo.lineTo(-38, 18);
+        alvo.lineTo(-9, -10);
+
+    } else {
+
+        alvo.moveTo(0, -38);
+        alvo.lineTo(11, -5);
+        alvo.lineTo(35, 24);
+        alvo.lineTo(11, 19);
+        alvo.lineTo(6, 31);
+        alvo.lineTo(0, 21);
+        alvo.lineTo(-6, 31);
+        alvo.lineTo(-11, 19);
+        alvo.lineTo(-35, 24);
+        alvo.lineTo(-11, -5);
+    }
+
+    alvo.closePath();
+    alvo.fill();
+
+    /* contorno */
+    alvo.strokeStyle =
+        "rgba(10,20,30,0.85)";
+
+    alvo.lineWidth = 2;
+    alvo.stroke();
+
+    /* detalhes das asas */
+    alvo.strokeStyle =
+        "rgba(180,230,255,0.7)";
+
+    alvo.lineWidth = 1.8;
+
+    alvo.beginPath();
+    alvo.moveTo(-9, 2);
+    alvo.lineTo(-27, 19);
+    alvo.moveTo(9, 2);
+    alvo.lineTo(27, 19);
+    alvo.stroke();
+
+    /* cabine */
+    alvo.fillStyle =
+        modelo.cabine;
+
+    alvo.shadowColor =
+        modelo.cabine;
+
+    alvo.shadowBlur = 8;
+
+    alvo.beginPath();
+    alvo.ellipse(
+        0,
+        -16,
+        tipo === "stealth" ? 7 : 8,
+        15,
+        0,
+        0,
+        Math.PI * 2
+    );
+    alvo.fill();
+
+    alvo.shadowBlur = 0;
+
+    alvo.fillStyle =
+        "rgba(255,255,255,0.72)";
+
+    alvo.beginPath();
+    alvo.ellipse(
+        -3,
+        -21,
+        2,
+        6,
+        0,
+        0,
+        Math.PI * 2
+    );
+    alvo.fill();
+
+    /* linha central e marcas */
+    alvo.strokeStyle =
+        "rgba(20,30,40,0.75)";
+
+    alvo.lineWidth = 1.7;
+
+    alvo.beginPath();
+    alvo.moveTo(0, -32);
+    alvo.lineTo(0, 21);
+    alvo.stroke();
+
+    /* Entradas de ar */
+    alvo.fillStyle =
+        "rgba(15,25,35,0.75)";
+
+    alvo.beginPath();
+    alvo.ellipse(-9, 3, 4, 10, -0.18, 0, Math.PI * 2);
+    alvo.ellipse(9, 3, 4, 10, 0.18, 0, Math.PI * 2);
+    alvo.fill();
+
+    /* Canhões nas asas */
+    alvo.fillStyle =
+        "#17212b";
+
+    alvo.fillRect(-29, 18, 4, 17);
+    alvo.fillRect(25, 18, 4, 17);
+
+    /* Luzes de navegação */
+    alvo.shadowBlur = 8;
+
+    alvo.shadowColor = "#ff3d3d";
+    alvo.fillStyle = "#ff4a4a";
+    alvo.beginPath();
+    alvo.arc(-31, 22, 2.4, 0, Math.PI * 2);
+    alvo.fill();
+
+    alvo.shadowColor = "#59ff7d";
+    alvo.fillStyle = "#59ff7d";
+    alvo.beginPath();
+    alvo.arc(31, 22, 2.4, 0, Math.PI * 2);
+    alvo.fill();
+
+    alvo.shadowBlur = 0;
+
+    /* Faixa decorativa */
+    alvo.strokeStyle =
+        "rgba(255,255,255,0.72)";
+
+    alvo.lineWidth = 1.4;
+
+    alvo.beginPath();
+    alvo.moveTo(-6, -29);
+    alvo.lineTo(-4, 18);
+    alvo.moveTo(6, -29);
+    alvo.lineTo(4, 18);
+    alvo.stroke();
+
+    /* Aletas traseiras */
+    alvo.fillStyle = modelo.cor2;
+
+    alvo.beginPath();
+    alvo.moveTo(-7, 20);
+    alvo.lineTo(-15, 34);
+    alvo.lineTo(-5, 29);
+    alvo.closePath();
+    alvo.fill();
+
+    alvo.beginPath();
+    alvo.moveTo(7, 20);
+    alvo.lineTo(15, 34);
+    alvo.lineTo(5, 29);
+    alvo.closePath();
+    alvo.fill();
+
+    alvo.restore();
+}
+
+
+/* =========================================================
+   JATO DO JOGADOR
+========================================================= */
+
+function desenharJogador() {
+
+    if (!jogador) {
+        return;
+    }
+
+    ctx.save();
+
+    const cx =
+        jogador.x +
+        jogador.largura / 2;
+
+    const cy =
+        jogador.y +
+        jogador.altura / 2;
+
+    ctx.translate(
+        cx,
+        cy
+    );
+
+    ctx.shadowColor =
+        "rgba(0,0,0,0.35)";
+
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 6;
+
+    desenharModeloAeronave(
+        ctx,
+        aeronaves[aeronaveSelecionada],
+        performance.now(),
+        true
+    );
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   JATO INIMIGO
+========================================================= */
+
+function desenharInimigo(inimigo) {
+
+    ctx.save();
+
+    const cx =
+        inimigo.x +
+        inimigo.largura / 2;
+
+    const cy =
+        inimigo.y +
+        inimigo.altura / 2;
+
+    ctx.translate(cx, cy);
+
+    ctx.rotate(
+        inimigo.rotacao
+    );
+
+    const modelo =
+        inimigo.modelo || 0;
+
+    /* Motor duplo e brilho */
+    ctx.shadowColor = "#ff5a00";
+    ctx.shadowBlur = 16;
+
+    ctx.fillStyle = "#ff4d00";
+
+    ctx.beginPath();
+    ctx.moveTo(-13, -27);
+    ctx.lineTo(-9, -54);
+    ctx.lineTo(-4, -27);
+    ctx.moveTo(4, -27);
+    ctx.lineTo(9, -54);
+    ctx.lineTo(13, -27);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    const gradiente =
+        ctx.createLinearGradient(
+            -34, 0,
+            34, 0
+        );
+
+    if (modelo === 1) {
+        gradiente.addColorStop(0, "#3b0d0d");
+        gradiente.addColorStop(0.5, "#d44a20");
+        gradiente.addColorStop(1, "#3b0d0d");
+    } else if (modelo === 2) {
+        gradiente.addColorStop(0, "#20183c");
+        gradiente.addColorStop(0.5, "#a730d7");
+        gradiente.addColorStop(1, "#20183c");
+    } else {
+        gradiente.addColorStop(0, "#551010");
+        gradiente.addColorStop(0.5, "#ef3333");
+        gradiente.addColorStop(1, "#551010");
+    }
+
+    ctx.fillStyle = gradiente;
+
+    ctx.beginPath();
+
+    if (modelo === 1) {
+        ctx.moveTo(0, 40);
+        ctx.lineTo(10, 10);
+        ctx.lineTo(34, -8);
+        ctx.lineTo(18, -16);
+        ctx.lineTo(28, -32);
+        ctx.lineTo(8, -24);
+        ctx.lineTo(0, -39);
+        ctx.lineTo(-8, -24);
+        ctx.lineTo(-28, -32);
+        ctx.lineTo(-18, -16);
+        ctx.lineTo(-34, -8);
+        ctx.lineTo(-10, 10);
+    } else {
+        ctx.moveTo(0, 40);
+        ctx.lineTo(11, 8);
+        ctx.lineTo(35, -23);
+        ctx.lineTo(12, -18);
+        ctx.lineTo(18, -32);
+        ctx.lineTo(5, -25);
+        ctx.lineTo(0, -41);
+        ctx.lineTo(-5, -25);
+        ctx.lineTo(-18, -32);
+        ctx.lineTo(-12, -18);
+        ctx.lineTo(-35, -23);
+        ctx.lineTo(-11, 8);
+    }
+
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle =
+        "rgba(30,0,0,0.85)";
+
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    /* Cabine */
+    ctx.shadowColor =
+        modelo === 2 ? "#d86cff" : "#ffb14f";
+
+    ctx.shadowBlur = 8;
+
+    ctx.fillStyle =
+        modelo === 2 ? "#6e2b99" : "#271b18";
+
+    ctx.beginPath();
+    ctx.ellipse(
+        0,
+        15,
+        8,
+        14,
+        0,
+        0,
+        Math.PI * 2
+    );
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    /* Reflexo */
+    ctx.fillStyle =
+        "rgba(255,210,170,0.72)";
+
+    ctx.beginPath();
+    ctx.ellipse(
+        -3,
+        10,
+        2,
+        5,
+        0,
+        0,
+        Math.PI * 2
+    );
+    ctx.fill();
+
+    /* entradas de ar */
+    ctx.fillStyle =
+        "#160d0d";
+
+    ctx.beginPath();
+    ctx.ellipse(-9, 2, 4, 9, 0.15, 0, Math.PI * 2);
+    ctx.ellipse(9, 2, 4, 9, -0.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* canhões */
+    ctx.fillRect(-30, -24, 4, 16);
+    ctx.fillRect(26, -24, 4, 16);
+
+    /* marcas nas asas */
+    ctx.strokeStyle =
+        "rgba(255,190,190,0.65)";
+
+    ctx.lineWidth = 1.7;
+
+    ctx.beginPath();
+    ctx.moveTo(-10, 1);
+    ctx.lineTo(-27, -18);
+    ctx.moveTo(10, 1);
+    ctx.lineTo(27, -18);
+    ctx.stroke();
+
+    /* luzes */
+    ctx.fillStyle = "#ffdf45";
+    ctx.beginPath();
+    ctx.arc(-29, -18, 2.2, 0, Math.PI * 2);
+    ctx.arc(29, -18, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+
+function desenharBoss() {
+
+    if (!boss) {
+        return;
+    }
+
+    ctx.save();
+
+    const cx =
+        boss.x +
+        boss.largura / 2;
+
+    const cy =
+        boss.y +
+        boss.altura / 2;
+
+    ctx.translate(cx, cy);
+
+    ctx.scale(1.28, 1.28);
+
+    /* motores */
+    ctx.shadowColor = "#ff3a00";
+    ctx.shadowBlur = 22;
+
+    ctx.fillStyle = "#ff4d00";
+
+    [-28, 0, 28].forEach(
+        mx => {
+
+            ctx.beginPath();
+            ctx.moveTo(mx - 7, -37);
+            ctx.lineTo(mx, -68);
+            ctx.lineTo(mx + 7, -37);
+            ctx.closePath();
+            ctx.fill();
+        }
+    );
+
+    ctx.shadowBlur = 0;
+
+    const bg =
+        ctx.createLinearGradient(
+            -65, 0,
+            65, 0
+        );
+
+    bg.addColorStop(0, "#251010");
+    bg.addColorStop(0.32, "#8a1919");
+    bg.addColorStop(0.5, "#d63d32");
+    bg.addColorStop(0.68, "#8a1919");
+    bg.addColorStop(1, "#251010");
+
+    ctx.fillStyle = bg;
+
+    ctx.beginPath();
+    ctx.moveTo(0, 53);
+    ctx.lineTo(18, 20);
+    ctx.lineTo(63, -10);
+    ctx.lineTo(45, -29);
+    ctx.lineTo(22, -25);
+    ctx.lineTo(14, -48);
+    ctx.lineTo(0, -58);
+    ctx.lineTo(-14, -48);
+    ctx.lineTo(-22, -25);
+    ctx.lineTo(-45, -29);
+    ctx.lineTo(-63, -10);
+    ctx.lineTo(-18, 20);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = "#210707";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    /* blindagem */
+    ctx.fillStyle =
+        "rgba(35,35,40,0.9)";
+
+    ctx.beginPath();
+    ctx.moveTo(-18, -7);
+    ctx.lineTo(-8, -35);
+    ctx.lineTo(8, -35);
+    ctx.lineTo(18, -7);
+    ctx.lineTo(10, 22);
+    ctx.lineTo(-10, 22);
+    ctx.closePath();
+    ctx.fill();
+
+    /* cabine */
+    ctx.shadowColor = "#ffb13c";
+    ctx.shadowBlur = 12;
+
+    ctx.fillStyle = "#382013";
+
+    ctx.beginPath();
+    ctx.ellipse(
+        0, 7, 11, 19,
+        0, 0, Math.PI * 2
+    );
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle =
+        "rgba(255,210,110,0.75)";
+
+    ctx.beginPath();
+    ctx.ellipse(
+        -4, 0, 3, 8,
+        0, 0, Math.PI * 2
+    );
+    ctx.fill();
+
+    /* canhões laterais */
+    ctx.fillStyle = "#17191c";
+
+    [-48, 48].forEach(
+        gx => {
+            ctx.fillRect(gx - 5, -17, 10, 31);
+            ctx.fillRect(gx - 2, 10, 4, 17);
+        }
+    );
+
+    /* detalhes de armadura */
+    ctx.strokeStyle =
+        "rgba(255,180,120,0.55)";
+
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(-20, -12);
+    ctx.lineTo(-46, -22);
+    ctx.moveTo(20, -12);
+    ctx.lineTo(46, -22);
+    ctx.moveTo(-16, 20);
+    ctx.lineTo(-34, 4);
+    ctx.moveTo(16, 20);
+    ctx.lineTo(34, 4);
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   LASER DO JOGADOR
+========================================================= */
+
+function desenharLaserJogador(laser) {
+
+    ctx.save();
+
+    ctx.shadowColor =
+        "#00eaff";
+
+    ctx.shadowBlur = 15;
+
+    const gradiente =
+        ctx.createLinearGradient(
+            0,
+            laser.y,
+            0,
+            laser.y + laser.altura
+        );
+
+    gradiente.addColorStop(
+        0,
+        "#ffffff"
+    );
+
+    gradiente.addColorStop(
+        0.5,
+        "#00ffff"
+    );
+
+    gradiente.addColorStop(
+        1,
+        "#008cff"
+    );
+
+    ctx.fillStyle =
+        gradiente;
+
+    ctx.fillRect(
+        laser.x,
+        laser.y,
+        laser.largura,
+        laser.altura
+    );
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   LASER INIMIGO
+========================================================= */
+
+function desenharLaserInimigo(laser) {
+
+    ctx.save();
+
+    ctx.shadowColor =
+        "#ff3030";
+
+    ctx.shadowBlur = 15;
+
+    const gradiente =
+        ctx.createLinearGradient(
+            0,
+            laser.y,
+            0,
+            laser.y + laser.altura
+        );
+
+    gradiente.addColorStop(
+        0,
+        "#ffffff"
+    );
+
+    gradiente.addColorStop(
+        0.5,
+        "#ff2222"
+    );
+
+    gradiente.addColorStop(
+        1,
+        "#a60000"
+    );
+
+    ctx.fillStyle =
+        gradiente;
+
+    ctx.fillRect(
+        laser.x,
+        laser.y,
+        laser.largura,
+        laser.altura
+    );
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   ATIRAR
+========================================================= */
+
+function atirarJogador(tempo) {
+
+    if (
+        !teclas.space ||
+        tempo - ultimoTiro <
+        intervaloTiro
+    ) {
+        return;
+    }
+
+    ultimoTiro =
+        tempo;
+
+    lasersJogador.push({
+
+        x:
+            jogador.x +
+            jogador.largura / 2 -
+            3,
+
+        y:
+            jogador.y - 18,
+
+        largura: 6,
+
+        altura: 25,
+
+        velocidade:
+            aeronaves[aeronaveSelecionada].laserVelocidade
+    });
+
+    somLaser();
+}
+
+
+/* =========================================================
+   INIMIGOS ATIRANDO
+========================================================= */
+
+function inimigosAtirando(tempo) {
+
+    if (bossAtivo || bossAparecendo) {
+        return;
+    }
+
+    for (
+        let inimigo of inimigos
+    ) {
+
+        if (
+            tempo -
+            inimigo.ultimoTiro >
+            1500 +
+            Math.random() * 1800
+        ) {
+
+            inimigo.ultimoTiro =
+                tempo;
+
+            lasersInimigos.push({
+
+                x:
+                    inimigo.x +
+                    inimigo.largura / 2 -
+                    3,
+
+                y:
+                    inimigo.y +
+                    inimigo.altura,
+
+                largura: 6,
+
+                altura: 25,
+
+                velocidade:
+                    7 +
+                    velocidadeInimigos
+            });
+
+            tocarSom(
+                480,
+                0.07,
+                "sawtooth",
+                0.05
+            );
+        }
+    }
+}
+
+
+/* =========================================================
+   COLISÃO
+========================================================= */
+
+function colide(a, b) {
+
+    return (
+
+        a.x <
+        b.x + b.largura &&
+
+        a.x + a.largura >
+        b.x &&
+
+        a.y <
+        b.y + b.altura &&
+
+        a.y + a.altura >
+        b.y
+    );
+}
+
+
+/* =========================================================
+   ATUALIZAR
+========================================================= */
+
+function atualizar(tempo) {
+
+    if (!jogoAtivo) {
+        return;
+    }
+
+
+    /* =================================
+       MOVIMENTO
+    ================================= */
+
+    /* ESQUERDA */
+
+    if (
+        (
+            teclas.arrowleft ||
+            teclas.a
+        ) &&
+        jogador.x > 0
+    ) {
+
+        jogador.x -=
+            jogador.velocidade;
+    }
+
+
+    /* DIREITA */
+
+    if (
+        (
+            teclas.arrowright ||
+            teclas.d
+        ) &&
+        jogador.x <
+        canvas.width -
+        jogador.largura
+    ) {
+
+        jogador.x +=
+            jogador.velocidade;
+    }
+
+
+    /* CIMA */
+
+    if (
+        (
+            teclas.arrowup ||
+            teclas.w
+        ) &&
+        jogador.y > 0
+    ) {
+
+        jogador.y -=
+            jogador.velocidade;
+    }
+
+
+    /* BAIXO */
+
+    if (
+        (
+            teclas.arrowdown ||
+            teclas.s
+        ) &&
+        jogador.y <
+        canvas.height -
+        jogador.altura
+    ) {
+
+        jogador.y +=
+            jogador.velocidade;
+    }
+
+
+    /* =================================
+       NUVENS
+    ================================= */
+
+    for (
+        let nuvem of nuvens
+    ) {
+
+        nuvem.y +=
+            nuvem.velocidade;
+
+        if (
+            nuvem.y >
+            canvas.height + 80
+        ) {
+
+            nuvem.y = -80;
+
+            nuvem.x =
+                Math.random() *
+                canvas.width;
+        }
+    }
+
+
+    /* =================================
+       TIRO
+    ================================= */
+
+    atirarJogador(
+        tempo
+    );
+
+
+    inimigosAtirando(
+        tempo
+    );
+
+    atualizarBoss(
+        tempo
+    );
+
+
+    /* =================================
+       INIMIGOS
+    ================================= */
+
+    for (
+        let i =
+            inimigos.length - 1;
+
+        i >= 0;
+
+        i--
+    ) {
+
+        const inimigo =
+            inimigos[i];
+
+        inimigo.y +=
+            inimigo.velocidade;
+
+
+        if (
+            inimigo.y >
+            canvas.height + 100
+        ) {
+
+            inimigos.splice(
+                i,
+                1
+            );
+
+            pontos++;
+
+            pontosTexto.textContent =
+                pontos;
+
+            if (
+                pontos % 5 === 0
+            ) {
+
+                velocidadeInimigos +=
+                    0.35;
+            }
+        }
+    }
+
+
+    /* =================================
+       LASERS DO JOGADOR
+    ================================= */
+
+    for (
+        let i =
+            lasersJogador.length - 1;
+
+        i >= 0;
+
+        i--
+    ) {
+
+        const laser =
+            lasersJogador[i];
+
+        laser.y -=
+            laser.velocidade;
+
+
+        if (
+            laser.y < -50
+        ) {
+
+            lasersJogador.splice(
+                i,
+                1
+            );
+
+            continue;
+        }
+
+
+        let acertou =
+            false;
+
+        /* Primeiro verifica se o tiro atingiu o boss */
+        if (
+            bossAtivo &&
+            boss &&
+            colide(
+                laser,
+                boss
+            )
+        ) {
+
+            lasersJogador.splice(
+                i,
+                1
+            );
+
+            boss.vida--;
+
+            atualizarBarraBoss();
+
+            tocarSom(
+                250,
+                0.055,
+                "square",
+                0.055
+            );
+
+            if (boss.vida <= 0) {
+                bossDerrotado();
+                return;
+            }
+
+            continue;
+        }
+
+        for (
+            let j =
+                inimigos.length - 1;
+
+            j >= 0;
+
+            j--
+        ) {
+
+            if (
+                colide(
+                    laser,
+                    inimigos[j]
+                )
+            ) {
+
+                inimigos.splice(
+                    j,
+                    1
+                );
+
+                lasersJogador.splice(
+                    i,
+                    1
+                );
+
+                pontos++;
+
+                recompensaPorInimigo();
+
+                tocarSom(
+                    150,
+                    0.18,
+                    "square",
+                    0.15
+                );
+
+                acertou = true;
+
+                if (!jogoAtivo) {
+                    break;
+                }
+
+                break;
+            }
+        }
+
+        if (acertou) {
+            continue;
+        }
+    }
+
+
+    /* =================================
+       LASERS DOS INIMIGOS
+    ================================= */
+
+    for (
+        let i =
+            lasersInimigos.length - 1;
+
+        i >= 0;
+
+        i--
+    ) {
+
+        const laser =
+            lasersInimigos[i];
+
+        laser.y +=
+            laser.velocidade;
+
+
+        if (
+            laser.y >
+            canvas.height + 50
+        ) {
+
+            lasersInimigos.splice(
+                i,
+                1
+            );
+
+            continue;
+        }
+
+
+        if (
+            colide(
+                laser,
+                jogador
+            )
+        ) {
+
+            morrer();
+
+            return;
+        }
+    }
+
+
+    /* =================================
+       COLISÃO COM O BOSS
+    ================================= */
+
+    if (
+        bossAtivo &&
+        boss &&
+        colide(
+            jogador,
+            boss
+        )
+    ) {
+
+        morrer();
+        return;
+    }
+
+
+    /* =================================
+       COLISÃO JATO
+    ================================= */
+
+    for (
+        const inimigo of inimigos
+    ) {
+
+        if (
+            colide(
+                jogador,
+                inimigo
+            )
+        ) {
+
+            morrer();
+
+            return;
+        }
+    }
+}
+
+
+/* =========================================================
+   GAME OVER
+========================================================= */
+
+function morrer() {
+
+    if (!jogoAtivo) {
+        return;
+    }
+
+    jogoAtivo = false;
+
+    hudBoss.style.display =
+        "none";
+
+    somExplosao();
+
+    pontuacaoFinal.innerHTML =
+        "Pontuação: " + pontos +
+        "<br>🪙 Moedas: " + moedas +
+        "<br>🎯 Fase alcançada: " + fase;
+
+    gameOver.style.display =
+        "flex";
+}
+
+
+/* =========================================================
+   DESENHAR
+========================================================= */
+
+function desenhar() {
+
+    /* =================================
+       CÉU
+    ================================= */
+
+    const ceu =
+        ctx.createLinearGradient(
+            0,
+            0,
+            0,
+            canvas.height
+        );
+
+    ceu.addColorStop(
+        0,
+        "#1987e8"
+    );
+
+    ceu.addColorStop(
+        0.55,
+        "#77ceff"
+    );
+
+    ceu.addColorStop(
+        1,
+        "#d9f6ff"
+    );
+
+    ctx.fillStyle =
+        ceu;
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    desenharSol();
+
+
+    /* NUVENS */
+
+    for (
+        const nuvem of nuvens
+    ) {
+
+        desenharNuvem(
+            nuvem
+        );
+    }
+
+
+    /* MONTANHAS */
+
+    desenharMontanhas();
+
+
+    /* INIMIGOS */
+
+    for (
+        const inimigo of inimigos
+    ) {
+
+        desenharInimigo(
+            inimigo
+        );
+    }
+
+
+    /* BOSS */
+
+    desenharBoss();
+
+
+    /* LASERS INIMIGOS */
+
+    for (
+        const laser of
+        lasersInimigos
+    ) {
+
+        desenharLaserInimigo(
+            laser
+        );
+    }
+
+
+    /* LASERS JOGADOR */
+
+    for (
+        const laser of
+        lasersJogador
+    ) {
+
+        desenharLaserJogador(
+            laser
+        );
+    }
+
+
+    /* JOGADOR */
+
+    desenharJogador();
+}
+
+
+/* =========================================================
+   LOOP
+========================================================= */
+
+function jogo(tempo) {
+
+    atualizar(
+        tempo
+    );
+
+    desenhar();
+
+    requestAnimationFrame(
+        jogo
+    );
+}
+
+
+/* =========================================================
+   BOTÕES DO MENU
+========================================================= */
+
+botaoJogar.addEventListener(
+    "click",
+    function() {
+
+        somClique();
+
+        iniciarJogo();
+    }
+);
+
+
+botaoLoja.addEventListener(
+    "click",
+    function() {
+
+        somClique();
+
+        menuPrincipal.classList.add(
+            "escondido"
+        );
+
+        menuLoja.classList.remove(
+            "escondido"
+        );
+
+        montarLoja();
+    }
+);
+
+
+botaoVoltarLoja.addEventListener(
+    "click",
+    function() {
+
+        somClique();
+
+        menuLoja.classList.add(
+            "escondido"
+        );
+
+        menuPrincipal.classList.remove(
+            "escondido"
+        );
+    }
+);
+
+
+botaoOpcoes.addEventListener(
+    "click",
+    function() {
+
+        somClique();
+
+        menuPrincipal.classList.add(
+            "escondido"
+        );
+
+        menuOpcoes.classList.remove(
+            "escondido"
+        );
+    }
+);
+
+
+botaoVoltar.addEventListener(
+    "click",
+    function() {
+
+        somClique();
+
+        menuOpcoes.classList.add(
+            "escondido"
+        );
+
+        menuPrincipal.classList.remove(
+            "escondido"
+        );
+    }
+);
+
+
+/* =========================================================
+   PRÓXIMA FASE
+========================================================= */
+
+proximaFase.addEventListener(
+    "click",
+    function() {
+
+        somClique();
+
+        iniciarProximaFase();
+    }
+);
+
+
+/* =========================================================
+   REINICIAR
+========================================================= */
+
+botaoReiniciar.addEventListener(
+    "click",
+    function() {
+
+        somClique();
+
+        iniciarJogo();
+    }
+);
+
+
+/* =========================================================
+   VOLTAR AO MENU
+========================================================= */
+
+voltarMenu.addEventListener(
+    "click",
+    function() {
+
+        somClique();
+
+        gameOver.style.display =
+            "none";
+
+        jogoAtivo = false;
+
+        boss = null;
+        bossAtivo = false;
+        bossAparecendo = false;
+        hudBoss.style.display = "none";
+
+        menuPrincipal.classList.remove(
+            "escondido"
+        );
+    }
+);
+
+
+/* =========================================================
+   VOLUME
+========================================================= */
+
+volumeSlider.addEventListener(
+    "input",
+    function() {
+
+        volumeGeral =
+            Number(
+                this.value
+            ) / 100;
+
+        valorVolume.textContent =
+            this.value + "%";
+    }
+);
+
+
+/* =========================================================
+   TOGGLE MÚSICA
+========================================================= */
+
+toggleMusica.addEventListener(
+    "click",
+    function() {
+
+        musicaLigada =
+            !musicaLigada;
+
+        this.classList.toggle(
+            "ativo",
+            musicaLigada
+        );
+
+        if (
+            musicaLigada
+        ) {
+
+            musicaInicializada =
+                false;
+
+            iniciarMusica();
+
+        } else {
+
+            pararMusica();
+        }
+
+        somClique();
+    }
+);
+
+
+/* =========================================================
+   TOGGLE EFEITOS
+========================================================= */
+
+toggleEfeitos.addEventListener(
+    "click",
+    function() {
+
+        efeitosLigados =
+            !efeitosLigados;
+
+        this.classList.toggle(
+            "ativo",
+            efeitosLigados
+        );
+
+        if (
+            efeitosLigados
+        ) {
+
+            tocarSom(
+                600,
+                0.08
+            );
+        }
+    }
+);
+
+
+/* =========================================================
+   TELA CHEIA
+========================================================= */
+
+botaoFullscreen.addEventListener(
+    "click",
+    async function() {
+
+        try {
+
+            if (
+                !document.fullscreenElement
+            ) {
+
+                await document.documentElement
+                    .requestFullscreen();
+
+            } else {
+
+                await document.exitFullscreen();
+            }
+
+        } catch (erro) {
+
+            console.log(
+                erro
+            );
+        }
+    }
+);
+
+
+/* =========================================================
+   PRIMEIRO DESENHO
+========================================================= */
+
+redimensionar();
+
+atualizarHUD();
+
+aplicarAeronaveSelecionada();
+
+desenhar();
+
+menuPrincipal.classList.remove(
+    "escondido"
+);
+
+requestAnimationFrame(jogo);
+
+</script>
+
+</body>
+</html>
